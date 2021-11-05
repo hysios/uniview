@@ -8,18 +8,22 @@ import (
 	"github.com/tj/assert"
 )
 
-func NewTransportDial(t *testing.T) {
+func TestNewTransportDial(t *testing.T) {
 	conn, err := net.Dial("tcp", "localhost:5196")
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
 
-	client, err := NewTransport(conn)
+	transport, err := NewTransport(conn)
 	assert.NoError(t, err)
-	assert.NotNil(t, client)
+	assert.NotNil(t, transport)
 
-	defer client.Close()
+	defer transport.Close()
 
 	packet := BuildPacket(Online, nil)
 
-	client.WritePacket(&packet)
+	transport.WritePacket(&packet)
+
+	evt := transport.Event()
+	p := <-evt
+	t.Logf("packet %v", p)
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/xml"
+	"errors"
 )
 
 type ImageItem struct {
@@ -34,7 +35,6 @@ func (x *xmlWrap) MarshalPacket() ([]byte, error) {
 }
 
 func (pass *PassVehicle) MarshalPacket() ([]byte, error) {
-
 	xmlPayload, err := pass.Vehicle.MarshalPacket()
 	if err != nil {
 		return nil, err
@@ -183,4 +183,25 @@ type Response struct {
 
 func (r *Response) MarshalPacket() ([]byte, error) {
 	return xml.Marshal(r)
+}
+
+func (r *Response) UnmarshalPacket(b []byte) error {
+	if len(b) < 4 {
+		return errors.New("buffer too short")
+	}
+
+	var (
+		buf    = bytes.NewBuffer(b)
+		length uint32
+	)
+
+	if err := binary.Read(buf, Order, &length); err != nil {
+		return err
+	}
+
+	if uint32(len(b)-4) != length {
+		return errors.New("invalid buf size")
+	}
+
+	return xml.Unmarshal(b[4:], r)
 }

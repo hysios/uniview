@@ -2,6 +2,8 @@ package uniview
 
 import (
 	"encoding/binary"
+	"encoding/xml"
+	"errors"
 )
 
 var (
@@ -48,7 +50,6 @@ func BuildPacket(cmd Command, payload interface{}) Packet {
 }
 
 func (p *Packet) MarshalPacket() ([]byte, error) {
-
 	payloadBytes, err := MarshalPacket(p.Payload)
 	if err != nil {
 		return nil, err
@@ -58,7 +59,7 @@ func (p *Packet) MarshalPacket() ([]byte, error) {
 		b = make([]byte, len(payloadBytes)+20)
 	)
 
-	p.Length = uint32(len(payloadBytes))
+	p.Length = uint32(len(payloadBytes)) + 8
 	headb, err := MarshalPacket(p.head())
 	if err != nil {
 		return nil, err
@@ -69,6 +70,34 @@ func (p *Packet) MarshalPacket() ([]byte, error) {
 	copy(b[len(b)-4:], p.End[:])
 
 	return b, nil
+}
+
+func (p *Packet) UnmarshalPacket(b []byte) error {
+	var (
+		payload = &dataWrap{}
+	)
+
+	copy(p.Head[:], b[:4])
+	p.Length = Order.Uint32(b[4:])
+	p.Version = Order.Uint32(b[8:])
+	p.Cmd = Command(Order.Uint32(b[12:]))
+	p.Payload = payload
+	if int(p.Length)+4 > len(b) {
+		return errors.New("buffer short")
+	}
+
+	err := UnmarshalPacket(payload, b[16:])
+
+	if err != nil {
+		return err
+	}
+
+	copy(p.End[:], b[8+int(p.Length):])
+	if p.Head != HeadSign || p.End != EndSign {
+		return errors.New("invalid packet sign")
+	}
+
+	return nil
 }
 
 func (p *Packet) head() *PacketHead {
@@ -87,4 +116,19 @@ func (data dataWrap) MarshalPacket() ([]byte, error) {
 	copy(b[4:], payloadBytes)
 
 	return b, nil
+}
+
+func (data *dataWrap) UnmarshalPacket(b []byte) error {
+	data.Length = Order.Uint32(b[:4])
+	if int(data.Length)+4 > len(b) {
+		return errors.New("buffer short")
+	}
+
+	var res Response
+	if err := xml.Unmarshal(b[4:4+data.Length], &res); err != nil {
+		return err
+	}
+
+	data.Payload = &res
+	return nil
 }

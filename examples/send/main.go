@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,15 +12,21 @@ import (
 )
 
 var (
-	addr       string
-	image      string
-	plateImage string
+	addr        string
+	image       string
+	plateImage  string
+	illegalType string
+	speed       int
+	limit       int
 )
 
 func init() {
 	flag.StringVar(&addr, "addr", "10.211.55.3:5196", "uniview address")
 	flag.StringVar(&image, "image", "images/02.jpg", "pass Vehicle image")
 	flag.StringVar(&plateImage, "plate-image", "images/01.jpg", "pass Vehicle plate image")
+	flag.StringVar(&illegalType, "illegal-type", "0", "illegal type")
+	flag.IntVar(&speed, "speed", 120, "speed")
+	flag.IntVar(&limit, "limit", 100, "limit speed")
 }
 
 func main() {
@@ -102,10 +109,10 @@ func main() {
 					PassTime:    ts,
 				},
 			},
-			VehicleSpeed:      "0",
-			LimitedSpeed:      "0",
+			VehicleSpeed:      strconv.Itoa(speed),
+			LimitedSpeed:      strconv.Itoa(limit),
 			MarkedSpeed:       "0",
-			DriveStatus:       "0",
+			DriveStatus:       illegalType,
 			VehicleBrand:      "99",
 			VehicleType:       "0",
 			VehicleLength:     "0",
@@ -175,8 +182,11 @@ func main() {
 		pass.Images = append(pass.Images, uniview.ImageItem{Content: b})
 	}
 
-	log.Print(client.Send(uniview.CheckpointRealtimeRecord, &pass))
-	time.Sleep(2 * time.Second)
+	token := client.Send(uniview.CheckpointRealtimeRecord, &pass)
+	if !token.WaitTimeout(10 * time.Second) {
+		log.Fatalf("send error %s", token.Err)
+	}
+	log.Printf("send success")
 }
 
 func loadImage(filename string) ([]byte, error) {
