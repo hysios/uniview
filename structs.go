@@ -103,15 +103,16 @@ type Vehicle struct {
 	LPRRectBotX         string   `xml:"LPRRectBotX"`
 	LPRRectBotY         string   `xml:"LPRRectBotY"`
 	Image               []struct {
-		Text        string `xml:",chardata"`
-		ImageIndex  string `xml:"ImageIndex"`
-		ImageURL    string `xml:"ImageURL"`
-		ImageType   string `xml:"ImageType"`
-		EncapFormat string `xml:"EncapFormat"`
-		ImageWidth  string `xml:"ImageWidth"`
-		ImageHeight string `xml:"ImageHeight"`
-		PassTime    string `xml:"PassTime"`
-		ImageData   string `xml:"ImageData"`
+		Text           string `xml:",chardata"`
+		ImageIndex     string `xml:"ImageIndex"`
+		ImageURL       string `xml:"ImageURL"`
+		ImageType      string `xml:"ImageType"`
+		EncapFormat    string `xml:"EncapFormat"`
+		ImageWidth     string `xml:"ImageWidth"`
+		ImageHeight    string `xml:"ImageHeight"`
+		PassTime       string `xml:"PassTime"`
+		ImageData      string `xml:"ImageData"`
+		SubComposeFlag string `xml:"SubComposeFlag"`
 	} `xml:"Image"`
 	VehicleSpeed      string `xml:"VehicleSpeed"`
 	LimitedSpeed      string `xml:"LimitedSpeed"`
